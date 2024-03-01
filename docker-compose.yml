@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .  # Контекст сборки находится в корне проекта wb_competitors
+      dockerfile: backend/Dockerfile
+    command: poetry run python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  celery:
+    build:
+      context: .  # Контекст сборки находится в корне проекта wb_competitors
+      dockerfile: backend/Dockerfile
+    command: poetry run celery -A backend worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - web
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: "redis:alpine"

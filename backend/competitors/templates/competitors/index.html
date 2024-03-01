@@ -2,6 +2,26 @@
 {% load custom_filters %}
 
 {% block container %}
+    {% if task_id %}
+<script>
+function fetchTaskStatus(taskId) {
+    fetch("{% url 'task_status' task_id %}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'SUCCESS') {
+                // Задача завершена, обновите страницу или отобразите результаты
+                console.log(data.result); // Обрабатывайте результат здесь
+            } else {
+                // Если задача еще не завершена, повторите через некоторое время
+                setTimeout(() => fetchTaskStatus(taskId), 2000);
+            }
+        });
+}
+
+// Запускаем функцию опроса для текущей задачи
+fetchTaskStatus("{{ task_id }}");
+</script>
+{% endif %}
     <form method="post">
         {% csrf_token %}
         <input type="text" name="product_url"
@@ -28,4 +48,5 @@
 {% else %}
     <p>Конкуренты не найдены.</p>
 {% endif %}
+
 {% endblock %}

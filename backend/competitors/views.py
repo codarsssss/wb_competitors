@@ -1,48 +1,37 @@
-import logging
-
-import requests
-from django.conf import settings
+from celery.result import AsyncResult
+from django.http import JsonResponse
 from django.shortcuts import render
-from requests.exceptions import RequestException
 
-
-def extract_product_id(product_url):
-    return product_url.split('/')[-2]
-
-
-def get_competitors(product_id):
-    try:
-        response = requests.get(f'{settings.SIMILAR_API_URL}{product_id}')
-        response.raise_for_status()
-        return response.json()
-    except RequestException as e:
-        logging.error(
-            f'Ошибка при запросе к API для получения конкурентов: {e}',
-        )
-        return []
-
-
-def get_product_details(product_ids):
-    ids_string = ';'.join(map(str, product_ids))
-    try:
-        response = requests.get(f'{settings.WB_API_URL}{ids_string}')
-        response.raise_for_status()
-        return response.json()
-    except RequestException as e:
-        logging.error(
-            f'Ошибка при запросе к API для получения деталей продуктов: {e}',
-        )
-        return []
+from .api import extract_product_id
+from .tasks import get_competitors_task
 
 
 def index(request):
+    context = {'task_id': None, 'results': None}
+
     if request.method == 'POST':
         product_url = request.POST.get('product_url')
         product_id = extract_product_id(product_url)
-        competitors = get_competitors(product_id)
-        competitors_details = get_product_details(competitors)
-        return render(
-            request, 'competitors/index.html',
-            {'competitors': competitors_details},
-        )
-    return render(request, 'competitors/index.html')
+
+        # Асинхронно запускаем задачу Celery для получения данных о конкурентах
+        task = get_competitors_task.delay(product_id)
+
+        # Сохраняем ID задачи в контексте, чтобы передать его в шаблон
+        context['task_id'] = task.id
+
+    return render(request, 'competitors/index.html', context)
+
+
+def task_status(request, task_id):
+    # Эта функция будет вызываться AJAX-запросом для проверки статуса задачи
+    task_result = AsyncResult(task_id)
+    if task_result.ready():
+        # Если задача завершена, извлекаем результат и передаем его в шаблон
+        context = {
+            'task_id': None,
+            'results': task_result.result,
+        }
+        return render(request, 'competitors/index.html', context)
+    else:
+        # Если результат ещё не готов, возвращаем статус 'PENDING'
+        return JsonResponse({'status': 'PENDING'}, status=202)
