@@ -120,3 +120,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+
+WB_API_URL = (
+    'https://card.wb.ru/cards/v1/list?appType=1&curr=rub&dest='
+    '-1275608&spp=30&nm='
+)
+
+SIMILAR_API_URL = 'https://in-visual-similar.wildberries.ru/?nm='

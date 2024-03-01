@@ -1,4 +1,31 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block container %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="product_url"
+               placeholder="Введите ссылку на товар">
+        <button type="submit">Показать конкурентов</button>
+    </form>
+    {% if competitors %}
+    <h2>Список конкурентов:</h2>
+    <ul>
+        {% for competitor in competitors.data.products %}
+            <li>
+                <strong>Название:</strong> {{ competitor.name }}<br>
+                <strong>Бренд:</strong> {{ competitor.brand }}<br>
+                <strong>Цена:</strong> {{ competitor.priceU|divide_by_100 }}<br>
+
+
+                <strong>Цена со скидкой:</strong> {{ competitor.salePriceU }}<br>
+                <strong>Рейтинг:</strong> {{ competitor.rating }}<br>
+                <strong>Средний рейтинг отзывов:</strong> {{ competitor.reviewRating }}<br>
+                <strong>Количество отзывов:</strong> {{ competitor.feedbacks }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Конкуренты не найдены.</p>
+{% endif %}
 {% endblock %}
