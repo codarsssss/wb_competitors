@@ -4,29 +4,34 @@ services:
   web:
     build:
       context: .  # Контекст сборки находится в корне проекта wb_competitors
-      dockerfile: backend/Dockerfile
-    command: poetry run python manage.py runserver 0.0.0.0:8000
+      dockerfile: backend/Dockerfile  # Путь к Dockerfile в папке backend
+    command: poetry run python backend/manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - .:/app  # Монтирование корня проекта в /app внутри контейнера
     ports:
       - "8000:8000"
     depends_on:
       - redis
     environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings  # Установка переменной окружения для Django settings
+      - PYTHONPATH=/app/backend
       - REDIS_URL=redis://redis:6379/0
 
   celery:
     build:
       context: .  # Контекст сборки находится в корне проекта wb_competitors
-      dockerfile: backend/Dockerfile
-    command: poetry run celery -A backend worker -l info
+      dockerfile: backend/Dockerfile  # Путь к Dockerfile в папке backend
+    command: poetry run celery -A backend worker -l info  # Обновленный путь к модулю celery
     volumes:
-      - .:/app
+      - .:/app  # Монтирование корня проекта в /app внутри контейнера
     depends_on:
       - web
       - redis
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONPATH=/app/backend
+      - REDIS_URL=redis://redis:6379/0  # Использование имени сервиса Redis из docker-compose.yml
+
 
   redis:
     image: "redis:alpine"

@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 Django = "^5.0.2"
-celery = "^5.3.6"
+celery = {extras = ["redis"], version = "^5.3.6"}
 redis = "^5.0.2"
 pre-commit = "^3.6.2"
 requests = "^2.31.0"
