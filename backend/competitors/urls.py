@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path('competitors/', views.index, name='index'),
-    path('task-status/<str:task_id>/', views.task_status, name='task_status'),
-
+    path(
+        'start-competitors-task/', views.start_competitors_task,
+        name='start_competitors_task',
+    ),
 ]

@@ -1,52 +1,61 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
 
-{% block container %}
-    {% if task_id %}
+{% block content %}
 <script>
-function fetchTaskStatus(taskId) {
-    fetch("{% url 'task_status' task_id %}")
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'SUCCESS') {
-                // Задача завершена, обновите страницу или отобразите результаты
-                console.log(data.result); // Обрабатывайте результат здесь
-            } else {
-                // Если задача еще не завершена, повторите через некоторое время
-                setTimeout(() => fetchTaskStatus(taskId), 2000);
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const input = document.querySelector('input[name="product_url"]');
+        const resultsElement = document.querySelector('#results');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const productUrl = input.value;
+            fetch('/start-competitors-task/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `product_url=${encodeURIComponent(productUrl)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                // для отслеживания задачи через WebSocket
+                console.log('Task ID:', data.task_id);
+                establishWebSocket(data.task_id);
+            })
+            .catch(error => console.error('Error:', error));
         });
-}
 
-// Запускаем функцию опроса для текущей задачи
-fetchTaskStatus("{{ task_id }}");
+        function establishWebSocket(taskId) {
+            const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+            const ws_path = ws_scheme + '://' + window.location.host + `/ws/task-status/${taskId}/`;
+            const webSocket = new WebSocket(ws_path);
+
+            webSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log('Data received:', data);
+                if(data.detail) {
+                    resultsElement.innerHTML += `<li>${data.detail}</li>`;
+                }
+            };
+
+            webSocket.onopen = function(e) {
+                console.log('WebSocket is open now.');
+            };
+
+            webSocket.onclose = function(e) {
+                console.error('WebSocket is closed now. :(');
+            };
+        }
+    });
 </script>
-{% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <input type="text" name="product_url"
-               placeholder="Введите ссылку на товар">
-        <button type="submit">Показать конкурентов</button>
-    </form>
-    {% if competitors %}
-    <h2>Список конкурентов:</h2>
-    <ul>
-        {% for competitor in competitors.data.products %}
-            <li>
-                <strong>Название:</strong> {{ competitor.name }}<br>
-                <strong>Бренд:</strong> {{ competitor.brand }}<br>
-                <strong>Цена:</strong> {{ competitor.priceU|divide_by_100 }}<br>
 
-
-                <strong>Цена со скидкой:</strong> {{ competitor.salePriceU }}<br>
-                <strong>Рейтинг:</strong> {{ competitor.rating }}<br>
-                <strong>Средний рейтинг отзывов:</strong> {{ competitor.reviewRating }}<br>
-                <strong>Количество отзывов:</strong> {{ competitor.feedbacks }}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Конкуренты не найдены.</p>
-{% endif %}
-
+<h1>Поиск конкурентов</h1>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="product_url" placeholder="Введите ссылку на товар">
+    <button type="submit">Показать конкурентов</button>
+</form>
+<ul id="results"></ul>
 {% endblock %}

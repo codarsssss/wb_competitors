@@ -1,15 +1,21 @@
-# Выберите базовый образ
+# Используем базовый образ Python
 FROM python:3.11.7-slim
 
-# Установите рабочий каталог внутри контейнера
+# Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
 
-# Копируйте файлы зависимостей в рабочий каталог
-COPY pyproject.toml poetry.lock* /app/
-
-# Установите зависимости с помощью Poetry
+# Устанавливаем poetry
 RUN pip install poetry
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-ansi
 
-# Копируйте оставшиеся файлы проекта
-COPY ./backend /app/
+# Копируем файлы проекта в контейнер из текущей директории, где находится Dockerfile
+COPY . .
+
+# Устанавливаем зависимости через poetry без создания виртуального окружения
+RUN poetry config virtualenvs.create false \
+  && poetry install --no-interaction --no-ansi
+
+# Открываем порт 8001 для внешних подключений к серверу
+EXPOSE 8001
+
+# Запускаем Daphne с нашим ASGI приложением
+CMD ["poetry", "run", "daphne", "-p", "8001", "-b", "0.0.0.0", "backend.asgi:application"]

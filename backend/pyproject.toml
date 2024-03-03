@@ -12,6 +12,11 @@ celery = {extras = ["redis"], version = "^5.3.6"}
 redis = "^5.0.2"
 pre-commit = "^3.6.2"
 requests = "^2.31.0"
+flower = "^2.0.1"
+channels = "^4.0.0"
+channels-redis = "^4.2.0"
+daphne = "^4.1.0"
+gunicorn = "^21.2.0"
 
 
 [build-system]

@@ -1,5 +1,3 @@
-# competitors/api.py
-
 import logging
 
 import requests

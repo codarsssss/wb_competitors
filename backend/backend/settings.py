@@ -19,15 +19,17 @@ ALLOWED_HOSTS: list[str] = ['localhost', '127.0.0.1', '[::1]']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'competitors',
+    'channels',
     'celery',
     'redis',
-    'competitors',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +59,8 @@ TEMPLATES = [
         },
     },
 ]
+
+ASGI_APPLICATION = 'backend.asgi.application'
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
@@ -140,3 +144,13 @@ WB_API_URL = (
 )
 
 SIMILAR_API_URL = 'https://in-visual-similar.wildberries.ru/?nm='
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis', 6379)],
+        },
+    },
+}
